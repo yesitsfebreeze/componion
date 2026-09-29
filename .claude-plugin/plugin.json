@@ -1,0 +1,83 @@
+{
+  "name": "componion",
+  "version": "5.3.0",
+  "description": "The one compaction plugin: minifies every tool result, and rolls old history into append-only fold indexes (Jev grades each call) so the model only sees the conversation move forward and reads any folded message back by id. Ends each turn with a bar of context after compression, before it, and the window.",
+  "author": {
+    "name": "Stefan Hoevelmanns"
+  },
+  "license": "MIT",
+  "userConfig": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Off leaves every hook unregistered (baseline for measuring savings).",
+      "default": true
+    },
+    "toolResultMaxChars": {
+      "type": "number",
+      "title": "Tool result max chars",
+      "description": "Older tool results are cut to this many characters (head and tail kept).",
+      "default": 2000
+    },
+    "outcomeMaxChars": {
+      "type": "number",
+      "title": "Failed call outcome max chars",
+      "description": "Older failed tool results are cut to this many characters.",
+      "default": 120
+    },
+    "liveResultMaxChars": {
+      "type": "number",
+      "title": "Live tool result max chars",
+      "description": "A fresh tool result (not Read/Edit/Write) is minified and cut to this many characters before the model reads it.",
+      "default": 8000
+    },
+    "keepThreshold": {
+      "type": "number",
+      "title": "Jev keep threshold",
+      "description": "Jev keep threshold.",
+      "default": 0.6
+    },
+    "truncateHeadChars": {
+      "type": "number",
+      "title": "Jev: chars kept of a dropped result",
+      "description": "Jev: chars kept of a dropped result.",
+      "default": 150
+    },
+    "maxStateTokens": {
+      "type": "number",
+      "title": "Jev: max state tokens",
+      "description": "Jev: max state tokens.",
+      "default": 15000
+    },
+    "maxRequestTokens": {
+      "type": "number",
+      "title": "Jev: max request tokens",
+      "description": "Jev: max request tokens.",
+      "default": 18000
+    },
+    "keepRecentTokens": {
+      "type": "number",
+      "title": "Recent tokens kept whole",
+      "description": "Newest tokens (chars/4) a fold leaves as they are; the cut moves back to a turn start.",
+      "default": 6000
+    },
+    "compactEveryTokens": {
+      "type": "number",
+      "title": "Context growth between folds",
+      "description": "A fold rewrites the prompt cache once; it runs after the context grew this many tokens since the last fold.",
+      "default": 20000
+    },
+    "cacheTtlMinutes": {
+      "type": "number",
+      "title": "Prompt cache TTL (minutes)",
+      "description": "Idle this long, the cache is cold; componion compacts then at no cache cost.",
+      "default": 60
+    },
+    "foldFromTokens": {
+      "type": "number",
+      "title": "Context before the first fold",
+      "description": "A fold makes the next request write every message to the prompt cache again; it only pays on a big context. No fold below this many tokens.",
+      "default": 50000
+    }
+  }
+}

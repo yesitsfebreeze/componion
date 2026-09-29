@@ -1,0 +1,24 @@
+{
+  "checks": {
+    "tests": {
+      "command": "claude plugin test . 2>&1 | tail -3 | grep -q ' 0 fail'",
+      "timeoutMs": 120000
+    },
+    "validate": {
+      "command": "claude plugin validate . 2>&1 | grep -q 'Validation passed'",
+      "timeoutMs": 60000
+    },
+    "longturn": {
+      "command": "claude plugin test . 2>&1 | grep -q '(pass) one long autonomous turn folds'",
+      "timeoutMs": 120000
+    },
+    "decompress": {
+      "command": "claude plugin test . 2>&1 | grep -q '(pass) decompress reads the exact id back'",
+      "timeoutMs": 120000
+    },
+    "restart": {
+      "command": "claude plugin test . 2>&1 | grep -q '(pass) after a fold the SessionStart re-run adds no second copy'",
+      "timeoutMs": 120000
+    }
+  }
+}

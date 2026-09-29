@@ -1,0 +1,1 @@
+First check whether `actions_taken` edits `hooks/componion.ts`. If NOT, answer yes. If it does, answer yes only when `command_results` show `bun bench/replay.ts` run after the last edit to that file, printing tokens sent and cache cost figures.

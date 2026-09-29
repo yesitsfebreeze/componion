@@ -1,0 +1,87 @@
+{
+  "goal": "- lean: keep context tokens low (minify and fold more, measured by ctx and saved in `orchi report`) while decompress and search_context still recover every original",
+  "specs": [
+    {
+      "id": "bench_measured",
+      "instructions": "First check whether `actions_taken` edits `hooks/componion.ts`. If NOT, answer yes. If it does, answer yes only when `command_results` show `bun bench/replay.ts` run after the last edit to that file, printing tokens sent and cache cost figures.",
+      "rank": 0
+    },
+    {
+      "id": "decompress_exact",
+      "instructions": "Does the test that decompress reads back the exact id (f1.1, not f11.1) pass?",
+      "require": {
+        "path": "checks.decompress.exit",
+        "op": "equals",
+        "value": 0
+      },
+      "rank": 0
+    },
+    {
+      "id": "figures_backed",
+      "instructions": "First check whether the final message claims a token saving. If NOT, answer yes. If it does, answer yes only when it names a before and an after number that appear in `command_results`.",
+      "rank": 0
+    },
+    {
+      "id": "fold_no_restart_copy",
+      "instructions": "Does the test that a fold skips the SessionStart compact re-run (and a built-in summary does not) pass?",
+      "require": {
+        "path": "checks.restart.exit",
+        "op": "equals",
+        "value": 0
+      },
+      "rank": 0
+    },
+    {
+      "id": "long_turn_folds",
+      "instructions": "Does the test that folds one long autonomous turn without splitting a call from its result pass?",
+      "require": {
+        "path": "checks.longturn.exit",
+        "op": "equals",
+        "value": 0
+      },
+      "rank": 0
+    },
+    {
+      "id": "tests_pass",
+      "instructions": "Does `claude plugin test .` report zero failing tests?",
+      "require": {
+        "path": "checks.tests.exit",
+        "op": "equals",
+        "value": 0
+      },
+      "rank": 0
+    },
+    {
+      "id": "validate",
+      "instructions": "Does `claude plugin validate .` report that validation passed?",
+      "require": {
+        "path": "checks.validate.exit",
+        "op": "equals",
+        "value": 0
+      },
+      "rank": 0
+    }
+  ],
+  "checks": {
+    "tests": {
+      "command": "claude plugin test . 2>&1 | tail -3 | grep -q ' 0 fail'",
+      "timeoutMs": 120000
+    },
+    "validate": {
+      "command": "claude plugin validate . 2>&1 | grep -q 'Validation passed'",
+      "timeoutMs": 60000
+    },
+    "longturn": {
+      "command": "claude plugin test . 2>&1 | grep -q '(pass) one long autonomous turn folds'",
+      "timeoutMs": 120000
+    },
+    "decompress": {
+      "command": "claude plugin test . 2>&1 | grep -q '(pass) decompress reads the exact id back'",
+      "timeoutMs": 120000
+    },
+    "restart": {
+      "command": "claude plugin test . 2>&1 | grep -q '(pass) after a fold the SessionStart re-run adds no second copy'",
+      "timeoutMs": 120000
+    }
+  }
+}

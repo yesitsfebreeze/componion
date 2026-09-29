@@ -1,0 +1,3 @@
+rounds: 6
+
+- lean: keep context tokens low (minify and fold more, measured by ctx and saved in `orchi report`) while decompress and search_context still recover every original
