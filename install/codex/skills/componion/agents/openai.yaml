@@ -1,0 +1,3 @@
+interface:
+  display_name: "Componion"
+  short_description: "Recall archived context and show trio status"

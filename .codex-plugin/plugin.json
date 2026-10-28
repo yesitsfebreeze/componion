@@ -1,0 +1,21 @@
+{
+  "name": "componion",
+  "version": "5.4.0+codex.1",
+  "description": "Codex v2 compaction, experimental JEV-folded handoffs, recoverable originals, and kern/orly/componion turn-end bars.",
+  "author": {
+    "name": "Stefan Hoevelmanns"
+  },
+  "skills": "./install/codex/skills/",
+  "interface": {
+    "displayName": "Componion",
+    "shortDescription": "JEV recall and the kern/orly/componion status trio.",
+    "longDescription": "Queues native compaction through the local Codex v2 daemon, restores JEV recall, and supports explicit experimental folded-history handoffs to new threads. Includes trio turn-end bars and exact original recovery.",
+    "developerName": "Stefan Hoevelmanns",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "Show the kern, orly and componion status bars."
+  },
+  "mcpServers": "./install/codex/mcp.json",
+  "license": "MIT",
+  "hooks": "./install/codex/hooks/hooks.json"
+}

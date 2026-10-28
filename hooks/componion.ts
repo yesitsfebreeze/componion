@@ -12,8 +12,7 @@
 //            gone cold anyway.
 //   fallback the built-in summary over a slimmed transcript when nothing can be
 //            folded (2000-char results, <recap>, summary template, file lists)
-//   turn end a bar of context after compression, before it, and the window;
-//            failed turns distilled to one line (slim, OUTCOME_MAX 120)
+//   turn end failed turns distilled to one line (slim, OUTCOME_MAX 120)
 import type { EngineInterface, Register, SessionMessage } from 'claude-code';
 import { compact } from '../jev/compact.js';
 import { buildJevRequest, parseJevResponse, DEFAULT_MODEL } from '../jev/request.js';
@@ -207,14 +206,6 @@ export function fold(messages: readonly SessionMessage[], keepTokens: number, he
   return [...messages.slice(0, from), { role: 'user', text, toolUses: [] }, ...messages.slice(to)];
 }
 
-// Three segments over `width` cells: context after compression, what
-// compression took out (before minus after), and the window left free.
-export function bar(t: { after: number; before: number; window: number }, width: number): [string, string, string] {
-  const cells = (n: number) => Math.round((Math.min(n, t.window) / t.window) * width);
-  const a = cells(t.after), b = Math.max(0, cells(t.before) - a);
-  return ['█'.repeat(a), '▓'.repeat(b), '░'.repeat(Math.max(0, width - a - b))];
-}
-
 // One line per failed turn: its tools (up to 8) and the first error, 120 chars.
 export const failureLine = (fails: { tool: string; text: string }[], outcomeMax: number) =>
   `${[...new Set(fails.map((f) => f.tool))].slice(0, MAX_TOOLS).join(',')}: ${fails[0].text.replace(/\s+/g, ' ').slice(0, outcomeMax)}`;
@@ -319,7 +310,6 @@ export const register: Register = (on, options) => {
   const grade = { jev: '' };
   let fails: { tool: string; text: string }[] = [];
   const status = (): Status => ({ saved, folds, lastFold, jev, compacting, failures, nextCompactAt: lastCompactAt + growthTokens });
-  const shots = new Map<string, { after: number; before: number; window: number; jev: string }>();
 
   on('session.start', async ($, e, next) => {
     await $.tool.register({
@@ -449,35 +439,5 @@ export const register: Register = (on, options) => {
       await publish($, status());
     }
     return next(e);
-  });
-
-  on('ui.render', { component: 'TurnDuration' }, async ($, e, next) => {
-    // kern's turn deck draws this line when present (CONTRACT §3).
-    const { value: deck } = await $.state.get({ plugin: 'kern', key: 'deck' } as never);
-    if (deck) return next(e);
-    const drawn = await next(e);
-    let shot = shots.get(e.requestId);
-    if (!shot) {
-      // Right after a compaction the last response's count is gone; the local
-      // /context estimate (no request sent) stands in until the next response.
-      let { context } = await $.session.usage();
-      if (!context.tokens) context = (await $.session.usage({ breakdown: 'summary' })).context;
-      const after = context.tokens || context.breakdown?.totalTokens || 0;
-      shot = { after, before: after + saved, window: context.window, jev };
-      if (after) shots.set(e.requestId, shot);
-    }
-    if (!shot.after || !shot.window) return drawn;
-    const { Box, Text } = $.ui.resolve(e);
-    const [a, b, r] = bar(shot, Math.max(10, Math.min(40, (e.viewport?.columns ?? 80) - 60)));
-    const k = (x: number) => `${Math.round(x / 1000)}k`;
-    return Box({ flexDirection: 'column', children: [
-      drawn,
-      Text({ children: [
-        '  ',
-        Text({ color: 'green', children: a }),
-        Text({ color: 'yellow', children: b }),
-        Text({ dimColor: true, children: `${r} ${k(shot.after)} now · ${k(shot.before)} uncompressed · ${k(shot.window)} window${shot.jev ? ` · ${shot.jev}` : ''}` }),
-      ] }),
-    ] });
   });
 };

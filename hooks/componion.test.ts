@@ -1,5 +1,5 @@
 import { test, expect, mock } from 'claude-code/testing';
-import { slim, keepFrom, fileLists, cut, minify, minifyDeep, bar, failureLine, fold, frozenEnd, FOLD_TAG, statusPayload, jevHeads } from './componion.ts';
+import { slim, keepFrom, fileLists, cut, minify, minifyDeep, failureLine, fold, frozenEnd, FOLD_TAG, statusPayload, jevHeads } from './componion.ts';
 
 const big = 'x'.repeat(10_000);
 const transcript = [
@@ -40,11 +40,6 @@ test('minify drops noise, keeps words', () => {
   expect(out).toContain('ok\nsame [×50]\n\n100% done');
   expect(out).not.toContain('\x1b');
   expect(minifyDeep({ stdout: noisy, data: noisy }, 20_000)).toEqual({ stdout: out, data: noisy });
-});
-
-test('bar splits after, saved and free', () => {
-  expect(bar({ after: 50, before: 80, window: 100 }, 10)).toEqual(['█████', '▓▓▓', '░░']);
-  expect(bar({ after: 90, before: 300, window: 100 }, 10)).toEqual(['█████████', '▓', '']);
 });
 
 test('rolling fold: index in order, frozen prefix and tail untouched, ids kept', () => {
