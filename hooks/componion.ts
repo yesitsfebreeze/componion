@@ -216,17 +216,24 @@ export const statusPayload = (s: Status, ts: number) => ({ v: 1, ts, ...s });
 
 type State = { home: string };
 
+// Windows sets USERPROFILE, not HOME; an unset HOME would turn into a relative "undefined/" dir under the cwd.
+export async function home($: EngineInterface) {
+  const dir = (await $.env.get('HOME')) || (await $.env.get('USERPROFILE'));
+  if (!dir) throw new Error('componion: neither HOME nor USERPROFILE is set');
+  return dir;
+}
+
 // Sibling of the per-session originals dir, so decompress/search_context never list it.
 // Plain write: $.fs has no rename, so a reader may rarely see a torn file and must treat bad JSON as silent.
 async function publish($: EngineInterface, s: Status) {
   try {
-    const path = `${await $.env.get('HOME')}/.claude/componion/status/${await $.session.id()}.json`;
+    const path = `${await home($)}/.claude/componion/status/${await $.session.id()}.json`;
     await $.fs.write(path, JSON.stringify(statusPayload(s, Date.now())));
   } catch { /* status is best effort */ }
 }
 
 async function dir($: EngineInterface, s: State) {
-  return (s.home ||= `${await $.env.get('HOME')}/.claude/componion/${await $.session.id()}`);
+  return (s.home ||= `${await home($)}/.claude/componion/${await $.session.id()}`);
 }
 
 // Originals stay on disk; the model reads them back through decompress.
@@ -244,7 +251,7 @@ async function logJev($: EngineInterface, entry: object) {
   try {
     const day = new Date().toISOString().slice(0, 10); // UTC day, CONTRACT §8
     const script = 'use File::Path; mkpath($ARGV[0]); open(F, ">>", "$ARGV[0]/$ARGV[1]") or die; local $/; syswrite(F, <STDIN>)';
-    await $.process.run(['perl', '-e', script, `${await $.env.get('HOME')}/.jev/log`, `${day}.jsonl`], { stdin: JSON.stringify(entry) + '\n' });
+    await $.process.run(['perl', '-e', script, `${await home($)}/.jev/log`, `${day}.jsonl`], { stdin: JSON.stringify(entry) + '\n' });
   } catch { /* the dataset never fails a fold */ }
 }
 
@@ -415,8 +422,11 @@ export const register: Register = (on, options) => {
       const line = `${new Date().toISOString()} ${failureLine(fails, limits.outcomeMaxChars)}\n`;
       fails = [];
       failures++;
-      const path = `${await $.env.get('HOME')}/.claude/componion/failures.log`;
-      void $.fs.read(path).catch(() => '').then((old) => $.fs.write(path, String(old) + line)).catch(() => {});
+      void home($).then(async (h) => {
+        const path = `${h}/.claude/componion/failures.log`;
+        const old = await $.fs.read(path).catch(() => '');
+        await $.fs.write(path, String(old) + line);
+      }).catch(() => {});
     }
     if (!e.agentId) {
       const tokensNow = (await $.session.usage()).context.tokens ?? 0;

@@ -1,5 +1,5 @@
 import { test, expect, mock } from 'claude-code/testing';
-import { slim, keepFrom, fileLists, cut, minify, minifyDeep, failureLine, fold, frozenEnd, FOLD_TAG, statusPayload, jevHeads } from './componion.ts';
+import { slim, keepFrom, fileLists, cut, minify, minifyDeep, failureLine, fold, frozenEnd, FOLD_TAG, statusPayload, jevHeads, home } from './componion.ts';
 
 const big = 'x'.repeat(10_000);
 const transcript = [
@@ -195,4 +195,11 @@ test('an answered Jev call appends one dataset line; a failed log write still fo
   const failing = await jevHeads($(async () => { throw new Error('disk full'); }), region, { preserveRecentMessages: 0 }, out);
   expect(out.jev).toBe('jev');
   expect(failing.size).toBe(heads.size);
+});
+
+test('home falls back to USERPROFILE on Windows, never the string "undefined"', async () => {
+  const $ = (env: Record<string, string>) => ({ env: { get: async (k: string) => env[k] } }) as any;
+  expect(await home($({ HOME: '/h', USERPROFILE: 'C:\\Users\\u' }))).toBe('/h');
+  expect(await home($({ USERPROFILE: 'C:\\Users\\u' }))).toBe('C:\\Users\\u');
+  await expect(home($({}))).rejects.toThrow();
 });
