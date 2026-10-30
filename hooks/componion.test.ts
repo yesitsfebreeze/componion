@@ -1,4 +1,5 @@
 import { test, expect, mock } from 'claude-code/testing';
+import { homedir } from 'node:os';
 import { slim, keepFrom, fileLists, cut, minify, minifyDeep, failureLine, fold, frozenEnd, FOLD_TAG, statusPayload, jevHeads, home } from './componion.ts';
 
 const big = 'x'.repeat(10_000);
@@ -197,9 +198,13 @@ test('an answered Jev call appends one dataset line; a failed log write still fo
   expect(failing.size).toBe(heads.size);
 });
 
-test('home falls back to USERPROFILE on Windows, never the string "undefined"', async () => {
+test('home is always absolute: USERPROFILE fallback, placeholder strings skipped', async () => {
   const $ = (env: Record<string, string>) => ({ env: { get: async (k: string) => env[k] } }) as any;
   expect(await home($({ HOME: '/h', USERPROFILE: 'C:\\Users\\u' }))).toBe('/h');
   expect(await home($({ USERPROFILE: 'C:\\Users\\u' }))).toBe('C:\\Users\\u');
-  await expect(home($({}))).rejects.toThrow();
+  // A host that stringifies a missing env var hands back "undefined"; interpolating
+  // it made a relative "undefined/" dir under the cwd.
+  expect(await home($({ HOME: 'undefined' }))).toBe(homedir());
+  expect(await home($({ HOME: 'null', USERPROFILE: 'undefined' }))).toBe(homedir());
+  expect((await home($({}))).startsWith('/') || /^[A-Za-z]:[\\/]/.test(await home($({})))).toBe(true);
 });

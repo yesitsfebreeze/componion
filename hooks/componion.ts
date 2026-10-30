@@ -13,6 +13,7 @@
 //   fallback the built-in summary over a slimmed transcript when nothing can be
 //            folded (2000-char results, <recap>, summary template, file lists)
 //   turn end failed turns distilled to one line (slim, OUTCOME_MAX 120)
+import { homedir } from 'node:os';
 import type { EngineInterface, Register, SessionMessage } from 'claude-code';
 import { compact } from '../jev/compact.js';
 import { buildJevRequest, parseJevResponse, DEFAULT_MODEL } from '../jev/request.js';
@@ -216,11 +217,16 @@ export const statusPayload = (s: Status, ts: number) => ({ v: 1, ts, ...s });
 
 type State = { home: string };
 
-// Windows sets USERPROFILE, not HOME; an unset HOME would turn into a relative "undefined/" dir under the cwd.
+// Windows sets USERPROFILE, not HOME, and a host can hand back the literal
+// string "undefined" for a missing key. Interpolated straight into a path that
+// becomes a relative "undefined/" dir under the cwd, so resolve once, skip
+// placeholders, and fall back to the absolute OS home.
 export async function home($: EngineInterface) {
-  const dir = (await $.env.get('HOME')) || (await $.env.get('USERPROFILE'));
-  if (!dir) throw new Error('componion: neither HOME nor USERPROFILE is set');
-  return dir;
+  for (const key of ['HOME', 'USERPROFILE']) {
+    const v = await $.env.get(key);
+    if (typeof v === 'string' && v && v !== 'undefined' && v !== 'null') return v;
+  }
+  return homedir();
 }
 
 // Sibling of the per-session originals dir, so decompress/search_context never list it.
